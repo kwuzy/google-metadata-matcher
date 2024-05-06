@@ -66,7 +66,11 @@ def processFolder(root_folder: str, edited_word: str, optimize: int, out_folder:
             errorCounter += 1
             continue
         
-        image = Image.open(image_path, mode="r").convert('RGB')
+        try:
+            image = Image.open(image_path, mode="r").convert('RGB')
+        except:
+            print(CURSOR_UP_FACTORY(2), 'OSError: image file is truncated', image_path, CLR, CURSOR_DOWN_FACTORY(2))
+            continue
         image_exif = image.getexif()
         if OrientationTagID in image_exif:
             orientation = image_exif[OrientationTagID]
@@ -89,12 +93,19 @@ def processFolder(root_folder: str, edited_word: str, optimize: int, out_folder:
             os.makedirs(dir)
 
         with open(metadata_path, encoding="utf8") as f: 
-            metadata = json.load(f)
+            try:
+                metadata = json.load(f)
+            except:
+                print(CURSOR_UP_FACTORY(2), 'json.decoder.JSONDecodeError', image_path, CLR, CURSOR_DOWN_FACTORY(2))
+                continue
 
         timeStamp = int(metadata['photoTakenTime']['timestamp'])
         if "exif" in image.info:
-            new_exif = adjust_exif(image.info["exif"], metadata)
-            image.save(new_image_path, quality=optimize, exif=new_exif)
+            try:
+                new_exif = adjust_exif(image.info["exif"], metadata)
+                image.save(new_image_path, quality=optimize, exif=new_exif)
+            except:
+                image.save(new_image_path, quality=optimize)
         else:
             image.save(new_image_path, quality=optimize)
 
